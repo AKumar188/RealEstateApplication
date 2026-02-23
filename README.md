@@ -143,9 +143,8 @@ Authorization: Bearer <access_token>
 
 ---
 
-Technologies used
-- Python
-- Django
-- Django rest framework
+
+
+
 
 
