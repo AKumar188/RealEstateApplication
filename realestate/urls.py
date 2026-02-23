@@ -19,4 +19,13 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('notification/', include('notifications.urls')),
 ]
+<<<<<<< Updated upstream
+=======
+
+
+#urlpatterns = [
+#    path('notification/', include('notifications.urls')),
+#]
+>>>>>>> Stashed changes
