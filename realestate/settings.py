@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'subscriptions',
     'notifications',
     'enquiries',
-    'admin_logs',
+    'rest_framework',
     'chat',
     'favorites',
 
@@ -126,8 +126,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
-<<<<<<< Updated upstream
-=======
 
 AUTH_USER_MODEL = 'accounts.User'
->>>>>>> Stashed changes
+
