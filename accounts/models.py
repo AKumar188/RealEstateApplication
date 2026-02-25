@@ -5,15 +5,17 @@ from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 
-# ✅ User Manager (Required)
+# User Manager
 class UserManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("User must have an email address")
 
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
-        user.set_password(password)  # ✅ hashes password
+        user.set_password(password)
+
         user.save(using=self._db)
         return user
 
@@ -25,8 +27,9 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-# ✅ Custom User Model
+# Custom User Model
 class User(AbstractBaseUser, PermissionsMixin):
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     email = models.EmailField(unique=True)
@@ -45,7 +48,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
-    # ✅ Fix reverse accessor clash
     groups = models.ManyToManyField(
         "auth.Group",
         related_name="accounts_user_groups",
@@ -61,7 +63,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects = UserManager()  # ✅ Attach manager
+    objects = UserManager()
 
     def __str__(self):
         return self.email

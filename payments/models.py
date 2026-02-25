@@ -15,5 +15,6 @@ class Payment(models.Model):
     gateway = models.CharField(max_length=50)
     gateway_transaction_id = models.CharField(max_length=255)
     status = models.CharField(max_length=20)
+    ss = models.CharField(max_length=20)
 
     created_at = models.DateTimeField(default=timezone.now)
