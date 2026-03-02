@@ -10,7 +10,7 @@ urlpatterns = [
     path("api/enquiries/", include("enquiries.urls")),
     path("facility/", include("facility.urls")),
     path("api/v1/payments/", include("payments.urls")),
-    path("subscription/", include("subscriptions.urls")),
+    path("subscription/", include("subscriptions.urls"))
 
     # Your Reviews API
     path("api/", include("reviews.urls")),
@@ -25,3 +25,4 @@ urlpatterns = [
     # Chats
     path('api/chat/', include('chat.urls')),
 ]
+
