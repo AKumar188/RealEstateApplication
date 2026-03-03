@@ -1,0 +1,38 @@
+body {
+    margin: 16px;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.messages {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+}
+
+.messages li {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border: 1px solid #d1d5db;
+}
+
+.messages li.success {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.messages li.error {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.messages li.warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.messages li.info {
+    background: #eff6ff;
+    color: #1e3a8a;
+}
