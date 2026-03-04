@@ -17,8 +17,11 @@ class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    message_type = models.CharField(max_length=20)
+    MESSAGE_TYPE_CHOICES = (
+    ("text", "Text"),
+    ("image", "Image"),
+    ("video", "Video"),)   
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES)
     content = models.TextField(blank=True)
     media_url = models.URLField(blank=True)
     is_read = models.BooleanField(default=False)

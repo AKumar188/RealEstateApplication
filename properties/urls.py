@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (
+"""from .views import (
     create_property,
     search_properties,
     property_detail,
@@ -15,4 +15,4 @@ urlpatterns = [
     path('<int:id>/update/', update_property),
     path('<int:id>/delete/', delete_property),
     path('my/', my_listings),
-]
+]"""

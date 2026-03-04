@@ -6,7 +6,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 
     path("api/", include("accounts.urls")),
-    path("api/", include("properties.urls")),
+    #path("api/", include("properties.urls")),
     path("api/enquiries/", include("enquiries.urls")),
     path("facility/", include("facility.urls")),
     path("api/v1/payments/", include("payments.urls")),
@@ -21,4 +21,7 @@ urlpatterns = [
     # JWT Authentication
     path("api/token/", TokenObtainPairView.as_view(), name="token_login"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+    # Chats
+    path('api/chat/', include('chat.urls')),
 ]
