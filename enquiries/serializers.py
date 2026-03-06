@@ -6,4 +6,3 @@ class EnquirySerializer(serializers.ModelSerializer):
         model = Enquiry
         fields = "__all__"
         read_only_fields = ("id", "sender", "owner", "created_at", "updated_at")
-        
