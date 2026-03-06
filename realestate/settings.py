@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-csa&=ojwkxs2mwq_e(d%!237ck+3ffd81==hfm6wq8kcu(b!@-
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+PAYMENT_WEBHOOK_SECRET = "mydemo123"
 
 # Application definition
 
@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'accounts',
     'properties',   
     'payments',
@@ -49,6 +51,15 @@ INSTALLED_APPS = [
     'favorites',
 
 ]
+AUTH_USER_MODEL = "accounts.User"
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    )
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
