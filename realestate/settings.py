@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "facility",
     "chat",
     "favorites",
+    "properties_owner",
 ]
 AUTH_USER_MODEL = "accounts.User"
 REST_FRAMEWORK = {
