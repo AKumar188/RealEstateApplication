@@ -102,6 +102,60 @@ Paste your access token.
 }
 ```
 
+3A. Razorpay Order Creation (Updated Response)
+
+After calling:
+
+POST /api/v1/payments/create/
+
+The response will now include Razorpay order information.
+
+Example Response
+{
+  "success": true,
+  "message": "Razorpay order created",
+  "order_id": "order_Q123456789",
+  "razorpay_key": "rzp_test_xxxxxx",
+  "payment": {
+    "id": "PAYMENT_UUID",
+    "status": "pending"
+  }
+}
+
+Copy the following values:
+
+order_id
+payment.id
+
+These will be used in the next steps.
+
+3B. Verify Razorpay Payment (Backend Simulation)
+
+Since there is no frontend, simulate Razorpay success.
+
+Request
+
+POST
+
+http://127.0.0.1:8000/api/v1/payments/verify/
+Authorization
+Bearer Token
+Body → raw JSON
+{
+  "razorpay_payment_id": "pay_test12345",
+  "razorpay_order_id": "order_Q123456789"
+}
+
+Use the order_id received in Step 3A.
+
+Response
+{
+  "success": true,
+  "message": "Payment verified successfully"
+}
+
+
+
 Copy the payment id.
 
 ---
@@ -262,7 +316,15 @@ Wrong payment_id or payment does not exist.
 
 Now you can fully test:
 
-- Payment creation
-- Payment history
-- Admin status update
-- Webhook confirmation flow
+Payment Status = success
+Subscription = active
+Updated Testing Flow
+1 Start Server
+2 Login (JWT Token)
+3 Create Payment
+3A Razorpay Order Created
+3B Verify Razorpay Payment
+4 View My Payments
+5 Admin Update Status
+6 Webhook Simulation
+7 Check Database

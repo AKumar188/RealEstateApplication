@@ -1,7 +1,10 @@
 import uuid
+import razorpay
+
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from django.conf import settings
 
 from .models import Payment
@@ -10,16 +13,17 @@ from .serializers import PaymentSerializer, PaymentCreateSerializer
 
 
 # ======================================================
-# CREATE PAYMENT (Pending)
+# CREATE PAYMENT (RAZORPAY ORDER CREATION)
 # ======================================================
+
 class CreatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+
         serializer = PaymentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Subscription must exist
         try:
             subscription = Subscription.objects.get(
                 id=serializer.validated_data["subscription_id"]
@@ -30,44 +34,93 @@ class CreatePaymentView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # User must own subscription
         if subscription.user != request.user:
             return Response(
                 {"error": "You cannot pay for another user's subscription"},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Prevent duplicate pending payment
+        # Prevent duplicate pending payments
         if Payment.objects.filter(subscription=subscription, status="pending").exists():
             return Response(
                 {"error": "Payment already pending for this subscription"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Create Payment Record
+        amount = serializer.validated_data["amount"]
+
+        # Razorpay client
+        client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+        )
+
+        # Create Razorpay Order
+        order = client.order.create({
+            "amount": int(amount * 100),
+            "currency": "INR",
+            "payment_capture": 1
+        })
+
         payment = Payment.objects.create(
             user=request.user,
             subscription=subscription,
-            amount=serializer.validated_data["amount"],
-            currency=serializer.validated_data["currency"],
-            gateway=serializer.validated_data["gateway"],
-            gateway_transaction_id=str(uuid.uuid4()),
+            amount=amount,
+            currency="INR",
+            gateway="razorpay",
+            gateway_transaction_id=order["id"],
             status="pending"
         )
 
         return Response(
             {
                 "success": True,
-                "message": "Payment created successfully",
-                "payment": PaymentSerializer(payment).data,
+                "message": "Razorpay order created",
+                "order_id": order["id"],
+                "razorpay_key": settings.RAZORPAY_KEY_ID,
+                "payment": PaymentSerializer(payment).data
             },
             status=status.HTTP_201_CREATED
         )
 
 
 # ======================================================
+# VERIFY RAZORPAY PAYMENT
+# ======================================================
+
+class VerifyRazorpayPayment(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+
+        payment_id = request.data.get("razorpay_payment_id")
+        order_id = request.data.get("razorpay_order_id")
+
+        try:
+            payment = Payment.objects.get(
+                gateway_transaction_id=order_id
+            )
+        except Payment.DoesNotExist:
+            return Response({"error": "Payment not found"}, status=404)
+
+        payment.gateway_transaction_id = payment_id
+        payment.status = "success"
+        payment.save()
+
+        # Activate subscription
+        payment.subscription.status = "active"
+        payment.subscription.save()
+
+        return Response({
+            "success": True,
+            "message": "Payment verified successfully",
+            "payment": PaymentSerializer(payment).data
+        })
+
+
+# ======================================================
 # USER PAYMENT HISTORY
 # ======================================================
+
 class MyPaymentsView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -79,6 +132,7 @@ class MyPaymentsView(generics.ListAPIView):
 # ======================================================
 # ADMIN: ALL PAYMENTS
 # ======================================================
+
 class AllPaymentsAdminView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAdminUser]
@@ -88,10 +142,12 @@ class AllPaymentsAdminView(generics.ListAPIView):
 # ======================================================
 # ADMIN UPDATE PAYMENT STATUS
 # ======================================================
+
 class UpdatePaymentStatusView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def patch(self, request, pk):
+
         try:
             payment = Payment.objects.get(id=pk)
         except Payment.DoesNotExist:
@@ -110,27 +166,26 @@ class UpdatePaymentStatusView(APIView):
         payment.status = new_status
         payment.save()
 
-        # Activate subscription if payment success
         if new_status == "success":
             payment.subscription.status = "active"
             payment.subscription.save()
 
-        return Response(
-            {
-                "success": True,
-                "message": "Payment status updated successfully",
-                "payment": PaymentSerializer(payment).data,
-            }
-        )
+        return Response({
+            "success": True,
+            "message": "Payment status updated",
+            "payment": PaymentSerializer(payment).data
+        })
 
 
 # ======================================================
-# PAYMENT WEBHOOK (Gateway Simulation)
+# PAYMENT WEBHOOK
 # ======================================================
+
 class PaymentWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+
         secret = request.headers.get("X-WEBHOOK-SECRET")
 
         if secret != settings.PAYMENT_WEBHOOK_SECRET:
@@ -158,7 +213,6 @@ class PaymentWebhookView(APIView):
         payment.status = new_status
         payment.save()
 
-        # Activate subscription if success
         if new_status == "success":
             payment.subscription.status = "active"
             payment.subscription.save()

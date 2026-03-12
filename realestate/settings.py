@@ -28,6 +28,10 @@ DEBUG = True
 ALLOWED_HOSTS = []
 PAYMENT_WEBHOOK_SECRET = "mydemo123"
 
+#razorpay
+RAZORPAY_KEY_ID = "rzp_test_SPuiSAly8yVWvk"
+RAZORPAY_KEY_SECRET = "6w5WiEIjp1LNmSXmLK073yvO"
+
 # Application definition
 
 INSTALLED_APPS = [

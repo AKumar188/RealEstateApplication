@@ -4,11 +4,14 @@ from .views import (
     MyPaymentsView,
     AllPaymentsAdminView,
     UpdatePaymentStatusView,
-    PaymentWebhookView
+    PaymentWebhookView,
+    VerifyRazorpayPayment   
 )
 
 urlpatterns = [
     path("create/", CreatePaymentView.as_view()),
+    path("verify/", VerifyRazorpayPayment.as_view()),  
+
     path("my/", MyPaymentsView.as_view()),
     path("admin/all/", AllPaymentsAdminView.as_view()),
     path("<uuid:pk>/status/", UpdatePaymentStatusView.as_view()),
