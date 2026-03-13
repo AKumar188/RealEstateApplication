@@ -1,9 +1,27 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-User = get_user_model()
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
+
+
+User = get_user_model()
+
+class RegisterSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ["email",  "password"]
+        extra_kwargs = {"password": {"write_only": True}}
+
+    def create(self, validated_data):
+
+        user = User.objects.create_user(
+            email=validated_data["email"],
+            password=validated_data["password"]
+        )
+
+        return user
 
 #Forgot Password Serializer
 class ForgotPasswordSerializer(serializers.Serializer):

@@ -116,3 +116,9 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db.DS_Store
+
+# Ignore all migration Python files
+**/migrations/*.py
+
+# Except __init__.py, which is needed
+!**/migrations/__init__.py

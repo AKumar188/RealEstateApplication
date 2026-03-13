@@ -1,12 +1,11 @@
 from django.shortcuts import render
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer
+from .serializers import ForgotPasswordSerializer, ResetPasswordSerializer, RegisterSerializer
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
@@ -48,3 +47,16 @@ class ResetPasswordView(APIView):
         return Response({
             "message": "Password updated successfully"
         }, status=status.HTTP_200_OK)
+    
+# subscription     
+class RegisterView(APIView):
+
+    def post(self, request):
+
+        serializer = RegisterSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User registered"})
+
+        return Response(serializer.errors)

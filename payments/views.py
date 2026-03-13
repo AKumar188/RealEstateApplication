@@ -1,17 +1,14 @@
 import uuid
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import permissions, status, generics
 from django.conf import settings
 
 from .models import Payment
-from subscriptions.models import Subscription
 from .serializers import PaymentSerializer, PaymentCreateSerializer
+from subscriptions.models import UserSubscription
 
 
-# ======================================================
-# CREATE PAYMENT (Pending)
-# ======================================================
 class CreatePaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -19,32 +16,19 @@ class CreatePaymentView(APIView):
         serializer = PaymentCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Subscription must exist
         try:
-            subscription = Subscription.objects.get(
+            subscription = UserSubscription.objects.get(
                 id=serializer.validated_data["subscription_id"]
             )
-        except Subscription.DoesNotExist:
-            return Response(
-                {"error": "Subscription not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        except UserSubscription.DoesNotExist:
+            return Response({"error": "Subscription not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        # User must own subscription
         if subscription.user != request.user:
-            return Response(
-                {"error": "You cannot pay for another user's subscription"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Cannot pay for another user's subscription"}, status=status.HTTP_403_FORBIDDEN)
 
-        # Prevent duplicate pending payment
         if Payment.objects.filter(subscription=subscription, status="pending").exists():
-            return Response(
-                {"error": "Payment already pending for this subscription"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Payment already pending"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create Payment Record
         payment = Payment.objects.create(
             user=request.user,
             subscription=subscription,
@@ -55,19 +39,9 @@ class CreatePaymentView(APIView):
             status="pending"
         )
 
-        return Response(
-            {
-                "success": True,
-                "message": "Payment created successfully",
-                "payment": PaymentSerializer(payment).data,
-            },
-            status=status.HTTP_201_CREATED
-        )
+        return Response({"success": True, "payment": PaymentSerializer(payment).data}, status=status.HTTP_201_CREATED)
 
 
-# ======================================================
-# USER PAYMENT HISTORY
-# ======================================================
 class MyPaymentsView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -76,18 +50,12 @@ class MyPaymentsView(generics.ListAPIView):
         return Payment.objects.filter(user=self.request.user)
 
 
-# ======================================================
-# ADMIN: ALL PAYMENTS
-# ======================================================
 class AllPaymentsAdminView(generics.ListAPIView):
     serializer_class = PaymentSerializer
     permission_classes = [permissions.IsAdminUser]
     queryset = Payment.objects.all().order_by("-created_at")
 
 
-# ======================================================
-# ADMIN UPDATE PAYMENT STATUS
-# ======================================================
 class UpdatePaymentStatusView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
@@ -98,57 +66,32 @@ class UpdatePaymentStatusView(APIView):
             return Response({"error": "Payment not found"}, status=404)
 
         new_status = request.data.get("status")
-
-        allowed_status = ["pending", "success", "failed", "refunded"]
-
-        if new_status not in allowed_status:
-            return Response(
-                {"error": f"Invalid status. Allowed: {allowed_status}"},
-                status=400
-            )
+        if new_status not in ["pending", "success", "failed", "refunded"]:
+            return Response({"error": "Invalid status"}, status=400)
 
         payment.status = new_status
         payment.save()
 
-        # Activate subscription if payment success
         if new_status == "success":
             payment.subscription.status = "active"
             payment.subscription.save()
 
-        return Response(
-            {
-                "success": True,
-                "message": "Payment status updated successfully",
-                "payment": PaymentSerializer(payment).data,
-            }
-        )
-
-
-# ======================================================
-# PAYMENT WEBHOOK (Gateway Simulation)
-# ======================================================
+        return Response({"success": True, "payment": PaymentSerializer(payment).data})
+    
 class PaymentWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         secret = request.headers.get("X-WEBHOOK-SECRET")
-
         if secret != settings.PAYMENT_WEBHOOK_SECRET:
-            return Response(
-                {"error": "Invalid webhook secret"},
-                status=403
-            )
+            return Response({"error": "Invalid webhook secret"}, status=403)
 
         payment_id = request.data.get("payment_id")
         new_status = request.data.get("status")
 
-        allowed_status = ["success", "failed"]
+        if new_status not in ["success", "failed"]:
+            return Response({"error": "Invalid status. Allowed: success, failed"}, status=400)
 
-        if new_status not in allowed_status:
-            return Response(
-                {"error": f"Invalid status. Allowed: {allowed_status}"},
-                status=400
-            )
 
         try:
             payment = Payment.objects.get(id=payment_id)
@@ -158,7 +101,7 @@ class PaymentWebhookView(APIView):
         payment.status = new_status
         payment.save()
 
-        # Activate subscription if success
+        # Activate subscription if payment succeeded
         if new_status == "success":
             payment.subscription.status = "active"
             payment.subscription.save()

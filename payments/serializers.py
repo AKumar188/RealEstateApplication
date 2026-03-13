@@ -1,7 +1,7 @@
 import uuid
 from rest_framework import serializers
 from .models import Payment
-from subscriptions.models import Subscription
+from subscriptions.models import UserSubscription
 
 
 # ✅ Payment Output Serializer
@@ -26,6 +26,6 @@ class PaymentCreateSerializer(serializers.Serializer):
     gateway = serializers.CharField(max_length=50)
 
     def validate_subscription_id(self, value):
-        if not Subscription.objects.filter(id=value).exists():
+        if not UserSubscription.objects.filter(id=value).exists():
             raise serializers.ValidationError("Subscription not found")
         return value
